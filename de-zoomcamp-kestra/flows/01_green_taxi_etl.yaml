@@ -1,0 +1,16 @@
+id: 01_green_taxi_etl
+namespace: zoomcamp
+inputs:
+  - id: year
+    type: STRING
+    defaults: "2019"
+  - id: month
+    type: STRING
+    defaults: "01"
+  - id: taxi_type
+    type: STRING
+    defaults: "green"
+tasks:
+  - id: extract
+    type: io.kestra.plugin.core.http.Download
+    uri: "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/{{inputs.taxi_type}}/{{inputs.taxi_type}}_tripdata_{{inputs.year}}-{{inputs.month}}.csv.gz"

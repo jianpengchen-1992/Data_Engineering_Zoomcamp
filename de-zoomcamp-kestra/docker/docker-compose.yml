@@ -1,0 +1,72 @@
+version: "3.8"
+
+volumes:
+  postgres_data:
+  kestra_data:
+
+networks:
+  kestra_net:
+    driver: bridge
+
+services:
+  # Service 1: The Database for Kestra's Internal State & Business Data
+  postgres:
+    image: postgres:15
+    container_name: kestra_postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: kestra
+      POSTGRES_PASSWORD: kestra_password
+      POSTGRES_DB: kestra
+    networks:
+      - kestra_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kestra"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Service 2: The Kestra Server
+  kestra:
+    image: kestra/kestra:latest
+    container_name: kestra_server
+    pull_policy: always
+    command: server local
+    ports:
+      - "8080:8080"  # The UI Port
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # CRITICAL: Allows spawning sibling containers
+      - /tmp:/tmp # shared temporary storage
+      - ../flows:/app/flows # Sync local flows folder to container
+      - ../scripts:/app/scripts # Sync local scripts folder to container
+    environment:
+      KESTRA_CONFIGURATION: |
+        kestra:
+          server:
+            basic-auth:
+              enabled: true
+              username: admin@kestra.io
+              password: Kestra123
+          jdbc:
+            url: jdbc:postgresql://postgres:5432/kestra
+            username: kestra
+            password: kestra_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kestra_net
+
+  #Service 3: PGAdmin (Optional but Recommended for Debugging)
+  pgadmin:
+    image: dpage/pgadmin4
+    command: server local
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "8085:80"
+    networks:
+      - kestra_net
