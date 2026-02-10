@@ -1,0 +1,12 @@
+# --- GCP & Secrets ---
+config/*.json
+.env
+
+# --- uv & Python Environment ---
+.venv/
+__pycache__/
+*.py[cod]
+.python-version
+
+# --- Jupyter Notebooks ---
+notebooks
