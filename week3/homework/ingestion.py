@@ -4,15 +4,13 @@ from google.cloud import storage
 import requests
 
 #config
-BUCKET_NAME = "data-engineering-zoomcamp-jianpeng-20260122"
+BUCKET_NAME = "project-energy-transition-raw-data"
 PARQUET_URL_PREFIX = "https://d37ci6vzurychx.cloudfront.net/trip-data/"
 PROJECT_ID = "avid-circle-484315-e5"
-PARQUET_NAME_PREFIX = "taxi_data"
-DATASET_NAME= "ny_taxi"
-TABLE_NAME_PREFIX = "taxi_data"
 
 
-storage_client = storage.Client(project=PROJECT_ID)
+
+storage_client = storage.Client.from_service_account_json("credentials_gcp.json")
 
 #step 1, try to get the bucket, or create it if it doesn't exist
 def upload_to_gcs(year, month, colour):

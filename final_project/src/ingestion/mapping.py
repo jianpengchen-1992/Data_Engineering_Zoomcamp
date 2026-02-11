@@ -15,8 +15,8 @@ def get_ids_from_path(json_data, target_main_cat, target_sub_cat, target_region)
     Returns:
         list: A list of found data_ids (integers).
     """
-    
-
+    target_main_cat = f"MM-Name.{target_main_cat}"
+    target_sub_cat = f"MM-Name.{target_sub_cat}"
 
     found_ids = []
 
@@ -25,16 +25,23 @@ def get_ids_from_path(json_data, target_main_cat, target_sub_cat, target_region)
     
     for main in main_categories:
         # Check if the target category is part of the name (e.g. "Stromerzeugung" in "MM-Name.Stromerzeugung")
-        if target_main_cat in main.get('name', ''):
+        if target_main_cat == main.get('name', ''):
             
             # 3. Traverse the 'sub' list
             sub_categories = main.get('sub', [])
             for sub in sub_categories:
-                if target_sub_cat in sub.get('name', ''):
+                if target_sub_cat == sub.get('name', ''):
                     
                     # 4. Dig into module -> other
                     #    (The data is nested inside 'module' dictionary, under key 'other')
-                    modules = sub.get('module', {}).get('other', [])
+
+                    module_data = sub.get('module', {})
+                    
+                    defaults = module_data.get('default', [])
+                    others = module_data.get('other', [])
+                    
+                    # Combine both lists
+                    modules = defaults + others                   
                     
                     # 5. Filter the modules by Region
                     for mod in modules:
@@ -54,7 +61,7 @@ def get_ids_from_path(json_data, target_main_cat, target_sub_cat, target_region)
 # --- Main Execution Block ---
 if __name__ == "__main__":
     
-    filename = 'config/market_data_configuration.json'
+    filename = 'config/market_data/market_data_configuration.json'
     
     # Check if file exists first
     if not os.path.exists(filename):
@@ -71,8 +78,8 @@ if __name__ == "__main__":
             print("Searching for: 'Stromerzeugung/Realisierte Erzeugung/DE-LU'...\n")
             
             # 3. Run the function
-            ids = get_ids_from_path(data, "Stromerzeugung", "Realisierte Erzeugung", "DE-LU")
-            
+            #ids = get_ids_from_path(data, "Stromerzeugung", "Realisierte Erzeugung", "DE-LU")
+            ids = get_ids_from_path(data, "Stromerzeugung", "Prognostizierte Erzeugung Day-Ahead", "DE-LU")
             # 4. Show results
             print("-" * 30)
             print(f"Result List of IDs: {ids}")

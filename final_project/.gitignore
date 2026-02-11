@@ -1,5 +1,5 @@
 # --- GCP & Secrets ---
-config/*.json
+config/keys/*.json
 .env
 
 # --- uv & Python Environment ---
