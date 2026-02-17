@@ -1,0 +1,10 @@
+{
+  "api_url": "https://www.smard.de/nip-download-manager/nip/download/market-data",
+  "payload_template": {
+    "format": "CSV",
+    "region": "DE-LU",
+    "type": "discrete",
+    "language": "de",
+    "resolution": ""
+  }
+}

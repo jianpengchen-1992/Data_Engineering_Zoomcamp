@@ -1,6 +1,11 @@
 # --- GCP & Secrets ---
-config/keys/*.json
+credentials
 .env
+
+# --- Security (The "Must Haves") ---
+.env
+.env.local
+.env.*
 
 # --- uv & Python Environment ---
 .venv/

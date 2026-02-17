@@ -1,6 +1,5 @@
 import json
 import os
-
 def get_ids_from_path(json_data, target_main_cat, target_sub_cat, target_region):
     """
     Traverses the SMARD-style JSON to find data_ids based on a path string.
@@ -58,34 +57,25 @@ def get_ids_from_path(json_data, target_main_cat, target_sub_cat, target_region)
 
     return found_ids
 
-# --- Main Execution Block ---
-if __name__ == "__main__":
-    
-    filename = 'config/market_data/market_data_configuration.json'
-    
-    # Check if file exists first
-    if not os.path.exists(filename):
-        print(f"Error: The file '{filename}' was not found.")
-    else:
-        try:
-            # 1. Load the JSON file
-            with open(filename, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            # 2. Define your search query
-            #    You can change "DE" to "LU" or "DE-LU" depending on what you need.
-            
-            print("Searching for: 'Stromerzeugung/Realisierte Erzeugung/DE-LU'...\n")
-            
-            # 3. Run the function
-            #ids = get_ids_from_path(data, "Stromerzeugung", "Realisierte Erzeugung", "DE-LU")
-            ids = get_ids_from_path(data, "Stromerzeugung", "Prognostizierte Erzeugung Day-Ahead", "DE-LU")
-            # 4. Show results
-            print("-" * 30)
-            print(f"Result List of IDs: {ids}")
-            print("-" * 30)
-
-        except json.JSONDecodeError:
-            print(f"Error: '{filename}' is not a valid JSON file.")
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+def create_payload(start_time, end_time, target_main_cat, target_sub_cat, target_region):
+    with open(MARKET_DATA_CONFIG_PATH, 'r', encoding='utf-8') as f:
+        json_data = json.load(f)
+    ids = get_ids_from_path(
+        json_data=json_data,
+        target_main_cat=target_main_cat,
+        target_sub_cat=target_sub_cat,
+        target_region=target_region
+    )
+    payload = {
+    "request_form": [{
+        "format": "CSV",
+        "moduleIds": ids,
+        "region": "DE-LU",
+        "timestamp_from": start_time,
+        "timestamp_to": end_time,
+        "type": "discrete",
+        "language": "de",
+        "resolution": ""
+    }]
+}
+    return payload
