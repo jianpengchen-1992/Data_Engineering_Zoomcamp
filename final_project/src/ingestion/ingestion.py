@@ -11,10 +11,13 @@ if str(root_dir) not in sys.path:
     sys.path.append(str(root_dir))
     
 def ingestion(start_time, end_time=None, target_main_cat=None, target_sub_cat=None):
+    
+    
     # --- Step 1: Convert Dates to Timestamps (if needed) ---
     start_dt = parse_german_date(start_time)
     if end_time:
         end_dt = parse_german_date(end_time)
+        end_dt = end_dt + pd.Timedelta(days=1)
     else:
         end_dt = start_dt + pd.Timedelta(days=1)  # Default to 1 day later
     start_timestamp = date_to_timestamp_ms(start_dt)

@@ -1,6 +1,9 @@
 import json
 import os
+import io
 from pathlib import Path
+import pandas as pd
+import logging
 
 SETTINGS_PATH = Path(__file__).resolve().parent.parent.parent / "config" / "settings.json"
 MARKET_DATA_CONFIG_PATH = Path(__file__).resolve().parent.parent.parent / "config" / "market_data" / "market_data_configuration.json"
@@ -100,7 +103,7 @@ def create_payload(start_time, end_time, target_main_cat, target_sub_cat):
     Note: We removed 'target_region' from arguments because it's now in the config!
     """
     
-    # 1. Load your Settings
+    # 1. Load the Settings
     #    (Ideally load this once at top of file, but this works too)
     settings = load_json_config("config/settings.json")
     
@@ -111,7 +114,6 @@ def create_payload(start_time, end_time, target_main_cat, target_sub_cat):
     
     # 3. Get the IDs using the Region from Config
     #    Now your ID search is locked to the same region as your payload
-    print(MARKET_DATA_CONFIG_PATH)
     market_config = load_json_config(MARKET_DATA_CONFIG_PATH)
     ids = get_ids_from_json(
         json_data=market_config,
@@ -135,6 +137,53 @@ def create_payload(start_time, end_time, target_main_cat, target_sub_cat):
     }
 
     return payload, settings["api_url"]
+
+def fields_from_response(response_json):
+    """Extracts the 'fields' list from the API response JSON.
+    This is useful for dynamically determining column names and types when converting to Parquet.
+    """
+    header_df = pd.read_csv(
+    io.StringIO(response_json.text), 
+    sep=";", 
+    encoding="utf-8-sig", 
+    nrows=0
+    )
+
+    # Extract your clean list of columns
+    header_list = header_df.columns.tolist()
+    return header_list
+
+def generate_parquet_schema_from_headers(header_list):
+    """
+    Generates a schema with 2 timestamps and i floats(accroding to the amount_of_ids).
+    """
+    headers_of_number = header_list[2:]  # Assuming the first two are timestamps
+    parse_dates = header_list[:2]  # Assuming the first two are timestamps
+    schema = {}
+    for col in headers_of_number:
+        schema[col] = 'float64' 
+
+    return parse_dates, schema
+
+def safe_convert_to_utc(date_series: pd.Series, local_tz: str = 'Europe/Berlin') -> pd.Series:
+    """
+    Safely converts a naive datetime Series to UTC.
+    Robustly handles Daylight Saving Time overlaps and gaps.
+    """
+    # 1. Ensure it is a datetime object
+    s = pd.to_datetime(date_series)
+    
+    # 2. Localize with fallback logic
+    try:
+        # First attempt: Infer chronological order
+        s = s.dt.tz_localize(local_tz, ambiguous='infer', nonexistent='shift_forward')
+    except Exception as e:
+        # Fallback: Out-of-order data or bad chunk slice
+        logging.warning(f"Timezone inference failed for {date_series.name}. Falling back to NaT. Detail: {e}")
+        s = s.dt.tz_localize(local_tz, ambiguous='NaT', nonexistent='shift_forward')
+        
+    # 3. Convert to UTC and return
+    return s.dt.tz_convert('UTC')
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
