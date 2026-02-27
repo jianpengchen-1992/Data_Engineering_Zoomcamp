@@ -30,6 +30,7 @@ if not GCP_BUCKET_NAME:
 # 1. Find the path dynamically
 BASE_DIR = Path(__file__).resolve().parent.parent
 SETTINGS_PATH = BASE_DIR / "config" / "settings.json"
+MARKET_DATA_CONFIG_PATH = BASE_DIR / "config" / "market_data" / "market_data_configuration.json"
 
 # 2. Load the settings
 if not SETTINGS_PATH.exists():
@@ -42,3 +43,5 @@ with open(SETTINGS_PATH, "r") as f:
 API_URL = _settings["api_url"]
 # We expose the whole 'defaults' dict so we can mix it easily later
 API_DEFAULTS = _settings["payload_template"]
+
+

@@ -9,15 +9,22 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from .http_utils import generate_parquet_schema_from_headers, fields_from_response, safe_convert_to_utc
-from .table_helper import clean_bq_column_name
+
 # Setup Logging
 logging.basicConfig(level=logging.INFO)
 
 # --- Method 1: The Converter (Handles Logic & Temp File Lifecycle) ---
 @contextmanager
-def stream_api_to_temp_parquet(api_url, payload, chunk_size=10000):
+@contextmanager
+def stream_api_to_temp_parquet(
+    api_url, 
+    payload, 
+    transform_func=None,  # Pass a function to handle domain-specific logic
+    csv_kwargs=None,      # Pass a dictionary for dynamic pd.read_csv arguments
+    chunk_size=10000
+):
     """
-    Streams CSV from API, converts to Parquet locally.
+    Streams CSV from API, applies optional transformations, and converts to Parquet locally.
     Yields the path to the temp file so other functions can use it.
     Automatically cleans up the file when done.
     """
@@ -25,44 +32,45 @@ def stream_api_to_temp_parquet(api_url, payload, chunk_size=10000):
     temp_path = temp_file.name
     temp_file.close() # Close so Pandas can lock/open it freely
     
+    # Default to an empty dict if no kwargs are provided
+    csv_kwargs = csv_kwargs or {}
+    
     try:
         logging.info("Starting API stream and conversion...")
-        # We use 'with' to ensure the request is properly closed after streaming        
+        
         with requests.post(api_url, json=payload, stream=True) as r:
             r.raise_for_status()
             r.raw.decode_content = True
-            cols = fields_from_response(r)
-            parse_dates, schema = generate_parquet_schema_from_headers(cols)
-            # Use the iterator to keep RAM usage low
-            csv_stream = pd.read_csv(io.StringIO(r.text), sep=';', decimal=',', thousands='.', chunksize=chunk_size, dtype=schema, parse_dates=parse_dates, date_format='%d.%m.%Y  %H:%M', header=0, encoding='utf-8-sig', na_values=['-'])
+            
+            # BIG FIX: Pass r.raw directly to Pandas to truly stream and save RAM!
+            csv_stream = pd.read_csv(r.raw, chunksize=chunk_size, **csv_kwargs)
+            
             chunks_processed = 0
-            # Clean column names for BigQuery compatibility 
-            clean_date_cols = [clean_bq_column_name(col) for col in parse_dates]
             for i, chunk in enumerate(csv_stream): 
-                # Clean column names for BigQuery compatibility 
-                chunk.columns = [clean_bq_column_name(col) for col in chunk.columns]     
-                # print(f"Chunk {i} preview:")
-                # print(chunk.head())
-                chunk[clean_date_cols[0]] = safe_convert_to_utc(chunk[clean_date_cols[0]])
-                chunk[clean_date_cols[1]] = chunk[clean_date_cols[0]]+ pd.to_timedelta(15, unit = 'm') 
+                
+                # --- APPLY MODULAR BUSINESS LOGIC ---
+                if transform_func:
+                    chunk = transform_func(chunk)
+                
                 # Append logic: overwrite if first chunk, append if subsequent
-                mode = 'w' if i == 0 else 'a' # specific to fastparquet (or imply via append=True)
-                append = False if i == 0 else True#Clean column names for BigQuery compatibility 
-                # This assumes fastparquet as per your original code
+                append = False if i == 0 else True
+                
                 chunk.to_parquet(
                     temp_path, 
                     engine='fastparquet', 
                     index=False, 
                     append=append
                 )
-                if i % 5 == 0: logging.info(f"Processed chunk {i}...")
+                
+                chunks_processed += 1 # Fixed: Actually incrementing your counter
+                if i % 5 == 0: 
+                    logging.info(f"Processed chunk {i}...")
                 
         if chunks_processed == 0:
             logging.warning("No chunks were processed! The DataFrame stream was empty.")
         else:
             logging.info(f"Conversion finished. {chunks_processed} chunks written to {temp_path}")
-        logging.info(f"Conversion finished. File ready at {temp_path}")
-        
+            
         # --- HAND OFF CONTROL ---
         yield temp_path 
         # ------------------------
@@ -75,7 +83,6 @@ def stream_api_to_temp_parquet(api_url, payload, chunk_size=10000):
         if os.path.exists(temp_path):
             os.remove(temp_path)
             logging.info("Temporary file wiped from disk.")
-
 
 # --- Method 2: The Uploader (Pure Logic, knows nothing about APIs/Conversion) ---
 def upload_parquet_to_gcs(local_path, bucket_name, destination_blob, credentials_json):

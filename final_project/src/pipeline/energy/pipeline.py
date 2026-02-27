@@ -1,16 +1,18 @@
+import pandas as pd
 import sys
 import os
-import pandas as pd
-from pathlib import Path
-from src.utils.http_utils import create_payload, parse_german_date, date_to_timestamp_ms
-from src.utils.gcp_utils import stream_api_to_temp_parquet, upload_parquet_to_gcs
-from src.config import GCP_BUCKET_NAME, GCP_PROJECT_ID,GCP_CREDENTIALS
 
-root_dir = Path.cwd().parent
-if str(root_dir) not in sys.path:
-    sys.path.append(str(root_dir))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.config import GCP_BUCKET_NAME, GCP_CREDENTIALS
+from src.utils.data_helper import date_to_timestamp_ms, parse_german_date
+from src.utils.http_utils import create_payload
+from src.utils.gcp_utils import stream_api_to_temp_parquet, upload_parquet_to_gcs
+from src.pipeline.energy.config import ENERGY_CSV_SETTING
+from src.pipeline.energy.transform import transform_energy_chunk
+
     
-def ingestion(start_time, end_time=None, target_main_cat=None, target_sub_cat=None):
+def pipeline(start_time, end_time=None, target_main_cat=None, target_sub_cat=None):
     
     
     # --- Step 1: Convert Dates to Timestamps (if needed) ---
@@ -27,7 +29,7 @@ def ingestion(start_time, end_time=None, target_main_cat=None, target_sub_cat=No
     payload, API_URL = create_payload(start_timestamp, end_timestamp, target_main_cat, target_sub_cat)
 
     # --- Step 3: Stream API to Parquet and Upload to GCS ---
-    with stream_api_to_temp_parquet(API_URL, payload) as temp_file_path:
+    with stream_api_to_temp_parquet(API_URL, payload, ENERGY_CSV_SETTING, transform_energy_chunk, 10000) as temp_file_path:
         upload_parquet_to_gcs(temp_file_path, GCP_BUCKET_NAME, f"{target_main_cat}/{target_sub_cat}/{start_dt.strftime('%Y-%m-%d')}_to_{end_dt.strftime('%Y-%m-%d')}.parquet", GCP_CREDENTIALS)
 
 if __name__ == "__main__":
@@ -40,4 +42,4 @@ if __name__ == "__main__":
     parser.add_argument("--target_sub_cat", required=True, type=str, help="Sub category of the data to ingest")
 
     args = parser.parse_args()
-    ingestion(args.start_time, args.end_time, args.target_main_cat, args.target_sub_cat)
+    pipeline(args.start_time, args.end_time, args.target_main_cat, args.target_sub_cat)

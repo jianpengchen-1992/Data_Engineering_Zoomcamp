@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Ingestion",
+            "type": "debugpy",
+            "cwd": "${workspaceFolder}/final_project",
+            "request": "launch",
+            
+            "console": "integratedTerminal",
+            "module": "src.ingestion.ingestion",
+            "args": [
+                "--start_time", "01.01.2019",
+                "--end_time", "03.01.2019",
+                "--target_main_cat", "Stromerzeugung",
+                "--target_sub_cat", "Realisierte Erzeugung"
+            ],
+            "justMyCode": true
+        }
+    ]
+}

@@ -10,13 +10,11 @@ import subprocess
 """
 Pre-reqs: 
 1. `pip install pandas pyarrow google-cloud-storage`
-2. Set GOOGLE_APPLICATION_CREDENTIALS to your project/service-account key
 3. Set GCP_GCS_BUCKET as your bucket or change default value of BUCKET
 """
 
 # services = ['fhv','green','yellow']
 init_url = 'https://nyc-tlc.s3.amazonaws.com/trip+data/'
-BUCKET = os.environ.get("GCP_GCS_BUCKET", "dtc_data_lake_norse-bond-337916")
 
 table_schema_green = pa.schema(
     [
