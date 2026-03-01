@@ -9,14 +9,17 @@
             "type": "debugpy",
             "cwd": "${workspaceFolder}/final_project",
             "request": "launch",
-            
             "console": "integratedTerminal",
-            "module": "src.ingestion.ingestion",
+            "module": "src.pipeline.energy.pipeline",
             "args": [
-                "--start_time", "01.01.2019",
-                "--end_time", "03.01.2019",
-                "--target_main_cat", "Stromerzeugung",
-                "--target_sub_cat", "Realisierte Erzeugung"
+                "--start_time",
+                "26.10.2025",
+                "--end_time",
+                "27.10.2025",
+                "--target_main_cat",
+                "Stromerzeugung",
+                "--target_sub_cat",
+                "Realisierte Erzeugung"
             ],
             "justMyCode": true
         }

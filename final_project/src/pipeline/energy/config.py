@@ -6,5 +6,4 @@ ENERGY_CSV_SETTING = {
     'header': 0, 
     'encoding': 'utf-8-sig', 
     'na_values': ['-']
-    # Add dtype=schema and parse_dates=parse_dates here if you calculate them beforehand
 }

@@ -7,9 +7,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.config import GCP_BUCKET_NAME, GCP_CREDENTIALS
 from src.utils.data_helper import date_to_timestamp_ms, parse_german_date
 from src.utils.http_utils import create_payload
-from src.utils.gcp_utils import stream_api_to_temp_parquet, upload_parquet_to_gcs
+from src.utils.gcp_utils import stream_api_to_temp_parquet, upload_parquet_to_gcs, load_to_bigquery
 from src.pipeline.energy.config import ENERGY_CSV_SETTING
-from src.pipeline.energy.transform import transform_energy_chunk
+from src.pipeline.energy.transform import transform_energy_chunk, energy_response_handler
 
     
 def pipeline(start_time, end_time=None, target_main_cat=None, target_sub_cat=None):
@@ -29,9 +29,15 @@ def pipeline(start_time, end_time=None, target_main_cat=None, target_sub_cat=Non
     payload, API_URL = create_payload(start_timestamp, end_timestamp, target_main_cat, target_sub_cat)
 
     # --- Step 3: Stream API to Parquet and Upload to GCS ---
-    with stream_api_to_temp_parquet(API_URL, payload, ENERGY_CSV_SETTING, transform_energy_chunk, 10000) as temp_file_path:
-        upload_parquet_to_gcs(temp_file_path, GCP_BUCKET_NAME, f"{target_main_cat}/{target_sub_cat}/{start_dt.strftime('%Y-%m-%d')}_to_{end_dt.strftime('%Y-%m-%d')}.parquet", GCP_CREDENTIALS)
-
+    blob_name = f"{target_main_cat}/{target_sub_cat}/{start_dt.strftime('%Y-%m-%d')}_to_{end_dt.strftime('%Y-%m-%d')}.parquet"
+    
+    with stream_api_to_temp_parquet(API_URL, payload, transform_func=transform_energy_chunk, csv_kwargs=ENERGY_CSV_SETTING, response_handler=energy_response_handler, chunk_size=10000) as temp_file_path:
+        upload_parquet_to_gcs(temp_file_path, GCP_BUCKET_NAME, blob_name, GCP_CREDENTIALS)
+    # --- load onto BigQuery ---
+    gcs_uri = f"gs://{GCP_BUCKET_NAME}/{blob_name}"
+    dataset = "energy_transition"
+    table = f"{target_main_cat}_{target_sub_cat}"
+    load_to_bigquery(gcs_uri, dataset, table, GCP_CREDENTIALS)
 if __name__ == "__main__":
     import argparse
 
