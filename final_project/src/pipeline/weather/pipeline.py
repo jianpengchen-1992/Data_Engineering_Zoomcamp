@@ -6,9 +6,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import GCP_BUCKET_NAME, GCP_CREDENTIALS
 from src.utils.data_helper import date_to_timestamp_ms, parse_german_date
-from src.utils.http_utils import create_payload
 from src.utils.gcp_utils import stream_chunks_to_parquet, upload_parquet_to_gcs, load_to_bigquery
-from src.pipeline.energy.config import ENERGY_CSV_SETTING
+from src.pipeline.weather.config import ENERGY_CSV_SETTING
 from src.pipeline.energy.transform import transform_energy_chunk, energy_response_handler, get_energy_csv_stream
 
     
@@ -44,14 +43,3 @@ def pipeline(start_time, end_time=None, target_main_cat=None, target_sub_cat=Non
     dataset = "energy_transition"
     table = f"{target_main_cat}_{target_sub_cat}"
     load_to_bigquery(gcs_uri, dataset, table, GCP_CREDENTIALS)
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Ingest Parquet data to GCS")
-    parser.add_argument("--start_time", required=True, type=str, help="Start time in DD/MM/YYYY format")
-    parser.add_argument("--end_time", required=False, type=str, help="End time in DD/MM/YYYY format (default: start_time + 1 day)")
-    parser.add_argument("--target_main_cat", required=True, type=str, help="Main category of the data to ingest")
-    parser.add_argument("--target_sub_cat", required=True, type=str, help="Sub category of the data to ingest")
-
-    args = parser.parse_args()
-    pipeline(args.start_time, args.end_time, args.target_main_cat, args.target_sub_cat)

@@ -11,75 +11,44 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 
 # --- Method 1: The Converter (Handles Logic & Temp File Lifecycle) ---
-@contextmanager
-def stream_api_to_temp_parquet(
-    api_url, 
-    payload, 
-    transform_func=None,
-    csv_kwargs=None,
-    response_handler=None,  # NEW: Callback to dynamically determine schema
-    chunk_size=10000
-):
+#@contextmanager
+def stream_chunks_to_parquet(df_generator, transform_func=None):
     """
-    Streams CSV from API, applies optional transformations, and converts to Parquet locally.
-    Yields the path to the temp file so other functions can use it.
+    Takes a generator of DataFrames and saves them to a temp Parquet file.
+    Yields the path to the temp file.
     """
     temp_file = tempfile.NamedTemporaryFile(suffix='.parquet', delete=False)
     temp_path = temp_file.name
-    temp_file.close() 
-    
-    csv_kwargs = csv_kwargs or {}
+    temp_file.close()
     
     try:
-        logging.info("Starting API stream and conversion...")
-        
-        with requests.post(api_url, json=payload, stream=True) as r:
-            r.raise_for_status()
-            r.raw.decode_content = True
+        chunks_processed = 0
+        for i, chunk in enumerate(df_generator):
+            if transform_func:
+                chunk = transform_func(chunk)
             
-            # --- DYNAMIC SCHEMA LOGIC ---
-            if response_handler:
-                # Let the custom callback inspect the response and return dynamic kwargs
-                dynamic_kwargs = response_handler(r)
-                csv_kwargs.update(dynamic_kwargs)
-            # ----------------------------
+            append = False if i == 0 else True
+            
+            chunk.to_parquet(
+                temp_path, 
+                engine='fastparquet', 
+                index=False, 
+                append=append
+            )
+            chunks_processed += 1
+            if i % 5 == 0:
+                logging.info(f"Processed chunk {i}...")
 
-            # Pass r.raw directly to Pandas to truly stream and save RAM!
-            csv_stream = pd.read_csv(r.raw, chunksize=chunk_size, **csv_kwargs)
-            
-            chunks_processed = 0
-            for i, chunk in enumerate(csv_stream): 
-                
-                if transform_func:
-                    chunk = transform_func(chunk)
-                
-                append = False if i == 0 else True
-                
-                chunk.to_parquet(
-                    temp_path, 
-                    engine='fastparquet', 
-                    index=False, 
-                    append=append
-                )
-                
-                chunks_processed += 1 
-                if i % 5 == 0: 
-                    logging.info(f"Processed chunk {i}...")
-                
         if chunks_processed == 0:
-            logging.warning("No chunks were processed! The DataFrame stream was empty.")
+            logging.warning("No chunks were processed!")
+            yield None
         else:
-            logging.info(f"Conversion finished. {chunks_processed} chunks written to {temp_path}")
-            
-        yield temp_path 
+            yield temp_path
 
-    except Exception as e:
-        logging.error(f"Conversion failed: {e}")
-        raise
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
-            logging.info("Temporary file wiped from disk.")
+            logging.info("Temporary file wiped.")
 # --- Method 2: The Uploader (Pure Logic, knows nothing about APIs/Conversion) ---
 def upload_parquet_to_gcs(local_path, bucket_name, destination_blob, credentials_json):
     """

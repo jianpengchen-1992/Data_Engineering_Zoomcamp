@@ -1,6 +1,8 @@
 import pandas as pd
 import re
-from src.utils.data_helper import safe_convert_to_utc   
+import requests
+from src.utils.data_helper import safe_convert_to_utc 
+from contextlib import contextmanager  
 def clean_bq_column_name(name):
     # 1. Handle German Umlauts
     replacements = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue'}
@@ -14,6 +16,7 @@ def clean_bq_column_name(name):
     name = re.sub(r'_+', '_', name).strip('_')
     
     return name
+
 def transform_energy_chunk(chunk):
     # 1. Standardize column names
     clean_date_cols = [clean_bq_column_name(col) for col in chunk.columns]
@@ -23,6 +26,21 @@ def transform_energy_chunk(chunk):
     chunk[clean_date_cols[1]] = chunk[clean_date_cols[0]]+ pd.to_timedelta(15, unit = 'm') 
 
     return chunk
+
+
+def get_energy_csv_stream(api_url, payload, chunk_size, response_handler = None, csv_kwargs=None):
+    # initialize csv_kwargs if it's None
+    csv_kwargs = csv_kwargs or {}
+    """Specific logic for streaming CSV from a REST API."""
+    with requests.post(api_url, json=payload, stream=True) as r:
+        r.raise_for_status()
+        r.raw.decode_content = True
+        if response_handler:
+            dynamic_kwargs = response_handler(r)
+            csv_kwargs.update(dynamic_kwargs)
+        
+        # This is the 'faucet' we pass to the Sink
+        yield from pd.read_csv(r.raw, chunksize=chunk_size, **csv_kwargs)
 
 def energy_response_handler(response):
     """
@@ -43,8 +61,6 @@ def energy_response_handler(response):
         'names': columns 
     }
         
-
-
 def generate_parquet_schema_from_headers(header_list):
     """
     Generates a schema with 2 timestamps and i floats(accroding to the amount_of_ids).
