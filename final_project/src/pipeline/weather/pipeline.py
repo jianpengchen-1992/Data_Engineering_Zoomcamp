@@ -7,11 +7,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.config import GCP_BUCKET_NAME, GCP_CREDENTIALS
 from src.utils.data_helper import date_to_timestamp_ms, parse_german_date
 from src.utils.gcp_utils import stream_chunks_to_parquet, upload_parquet_to_gcs, load_to_bigquery
-from src.pipeline.weather.config import ENERGY_CSV_SETTING
+from src.pipeline.weather.config import CITIES, MINUTELY_15_VARIABLES_HIST, HOURLY_VARIABLES_HIST 
 from src.pipeline.energy.transform import transform_energy_chunk, energy_response_handler, get_energy_csv_stream
 
-    
-def pipeline(start_time, end_time=None, target_main_cat=None, target_sub_cat=None):
+# 
+def pipeline(start_time=None, end_time=None, target_main_cat=None, target_sub_cat=None):
     
     
     # --- Step 1: Convert Dates to Timestamps (if needed) ---
