@@ -8,8 +8,10 @@ CITIES = [
     #add a new dictionary here to add a city
 ]
 # You can easily add "relative_humidity_2m", "precipitation", etc.
+
+#the hourly variables are the same for current data, so we can reuse the same list for both current and historical data(1 hour).
 HOURLY_VARIABLES_HIST = ["temperature_2m", 
-                    "wind_speed_100m", 
+                    "wind_speed_100m",
                     "wind_direction_100m", 
                     "snowfall", 
                     "precipitation", 
@@ -18,7 +20,7 @@ HOURLY_VARIABLES_HIST = ["temperature_2m",
                     "diffuse_radiation"
                     ]
 
-MINUTELY_15_VARIABLES_HIST = ["temperature_2m", 
+MINUTELY_15_VARIABLES_FORECAST = ["temperature_2m", 
                     "wind_speed_80m", 
                     "wind_direction_80m", 
                     "snowfall", 
@@ -29,7 +31,7 @@ MINUTELY_15_VARIABLES_HIST = ["temperature_2m",
                     ]
 
 WEATHER_CSV_SETTING = {
-    'sep': ';', 
+    'sep': ',', 
     'decimal': '.', 
     'thousands': ',', 
     'date_format': '%d.%m.%Y  %H:%M', 

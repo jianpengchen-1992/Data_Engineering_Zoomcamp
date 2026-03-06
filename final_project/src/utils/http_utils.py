@@ -2,8 +2,10 @@ import json
 import os
 import io
 from pathlib import Path
+from final_project.src.pipeline.weather.config import URL_WEATHER_FORECAST, URL_WEATHER_HISTORICAL
 from src.config import SETTINGS_PATH, MARKET_DATA_CONFIG_PATH
 import pandas as pd
+
 
 
 
@@ -96,7 +98,7 @@ def get_ids_from_json(json_data, target_main_cat, target_sub_cat, target_region)
 
     return found_ids
 
-def create_payload(start_time, end_time, target_main_cat, target_sub_cat):
+def create_energy_payload(start_time, end_time, target_main_cat, target_sub_cat):
     """
     Creates the SMARD API payload using region/settings from config.
     Note: We removed 'target_region' from arguments because it's now in the config!
@@ -136,7 +138,6 @@ def create_payload(start_time, end_time, target_main_cat, target_sub_cat):
     }
 
     return payload, settings["api_url"]
-
 
 
 if __name__ == "__main__":

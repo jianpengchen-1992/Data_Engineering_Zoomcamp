@@ -1,32 +1,30 @@
-iimport requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-import io
-import json
+import requests
 
-def get_weather_json_file(url, params):
-    # Pro move: Define a retry strategy so your code doesn't 
-    # crash on a 500 error or rate limit (429)
-    retry_strategy = Retry(
-        total=5,
-        backoff_factor=1, # Wait 1s, 2s, 4s...
-        status_forcelist=[429, 500, 502, 503, 504],
-    )
-    
-    adapter = HTTPAdapter(max_retries=retry_strategy)
-    session = requests.Session()
-    session.mount("https://", adapter)
+from src.pipeline.weather.config import MINUTELY_15_VARIABLES_HIST, HOURLY_VARIABLES_HIST, URL_WEATHER_FORECAST, URL_WEATHER_HISTORICAL
 
-    # Now you have a robust requester
-    response = session.get(url, params=params)
-    response.raise_for_status()
-    
-    # Get the raw JSON dictionary
-    data = response.json()
+def get_weather_csv_stream(api_url, params):
+    r = requests.get(api_url, params=params)
+    data = r.json()
+    df = pd.DataFrame(data['minutely_15'])
+    return df.to_csv(index=False).splitlines()
 
-    # Wrap it in a virtual file for your GCS uploader
-    virtual_file = io.BytesIO(json.dumps(data).encode('utf-8'))
-    virtual_file.seek(0)
-    
-    return virtual_file
+def create_payload(start_date, end_date = None, lat, lon, target_cat = "historical"):
+    if end_date is None:
+        end_date = start_date
+    payload = {
+        "latitude": lat,
+        "longitude": lon,
+        "start_date": start_date,
+        "end_date": end_date,
+    }
+
+    if target_cat == "historical":
+        payload["hourly"] = HOURLY_VARIABLES_HIST
+        api_url = URL_WEATHER_HISTORICAL
+    elif target_cat == "forecast":
+        payload["minutely_15"] = MINUTELY_15_VARIABLES_HIST
+        api_url = URL_WEATHER_FORECAST
+    else:
+        raise ValueError("Invalid target category. Must be 'historical' or 'forecast'.")
+    return payload, api_url
 

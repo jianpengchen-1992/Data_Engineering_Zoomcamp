@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import GCP_BUCKET_NAME, GCP_CREDENTIALS
 from src.utils.data_helper import date_to_timestamp_ms, parse_german_date
-from src.utils.http_utils import create_payload
+from src.utils.http_utils import create_energy_payload
 from src.utils.gcp_utils import stream_chunks_to_parquet, upload_parquet_to_gcs, load_to_bigquery
 from src.pipeline.energy.config import ENERGY_CSV_SETTING
 from src.pipeline.energy.transform import transform_energy_chunk, energy_response_handler, get_energy_csv_stream
@@ -26,7 +26,7 @@ def pipeline(start_time, end_time=None, target_main_cat=None, target_sub_cat=Non
     end_timestamp = date_to_timestamp_ms(end_dt)
 
     # --- Step 2: Create the Payload and url---
-    payload, API_URL = create_payload(start_timestamp, end_timestamp, target_main_cat, target_sub_cat)
+    payload, API_URL = create_energy_payload(start_timestamp, end_timestamp, target_main_cat, target_sub_cat)
 
     # --- Step 3: Stream API to Parquet and Upload to GCS ---
     blob_name = f"{target_main_cat}/{target_sub_cat}/{start_dt.strftime('%Y-%m-%d')}_to_{end_dt.strftime('%Y-%m-%d')}.parquet"
