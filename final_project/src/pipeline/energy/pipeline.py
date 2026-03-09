@@ -19,17 +19,16 @@ def pipeline(start_time, end_time=None, target_main_cat=None, target_sub_cat=Non
     start_dt = parse_german_date(start_time)
     if end_time:
         end_dt = parse_german_date(end_time)
-        end_dt = end_dt + pd.Timedelta(days=1)
     else:
-        end_dt = start_dt + pd.Timedelta(days=1)  # Default to 1 day later
+        end_dt = start_dt
     start_timestamp = date_to_timestamp_ms(start_dt)
-    end_timestamp = date_to_timestamp_ms(end_dt)
+    end_timestamp = date_to_timestamp_ms(end_dt + pd.Timedelta(days=1))  # API returns data in 24h chunks, so we add 1 day to the end time
 
     # --- Step 2: Create the Payload and url---
     payload, API_URL = create_energy_payload(start_timestamp, end_timestamp, target_main_cat, target_sub_cat)
 
-    # --- Step 3: Stream API to Parquet and Upload to GCS ---
-    blob_name = f"{target_main_cat}/{target_sub_cat}/{start_dt.strftime('%Y-%m-%d')}_to_{end_dt.strftime('%Y-%m-%d')}.parquet"
+    # --- Step 3: Stream API to Parquet and Upload to GCS --- 
+    blob_name = f"energy/{target_main_cat}/{target_sub_cat}/{start_dt.strftime('%Y-%m-%d')}_to_{end_dt.strftime('%Y-%m-%d')}.parquet"
     
     energy_stream = get_energy_csv_stream(API_URL, 
                                           payload, 

@@ -60,16 +60,32 @@ def date_to_timestamp_ms(dt_obj):
 
 def parse_german_date(date_string):
     """
-    Parses a string (DD.MM.YYYY or DD/MM/YYYY) into a timezone-aware 
+    Parses a string (YYYY-MM-DD or YYYY.MM.DD) into a timezone-aware 
     datetime object for Europe/Berlin.
     """
     tz = ZoneInfo("Europe/Berlin")
     
     # standardize separator
-    clean_date = date_string.replace('/', '.')
+    clean_date = date_string.replace('-', '.')
     
     # Parse to naive datetime
-    naive_dt = datetime.strptime(clean_date, "%d.%m.%Y")
+    naive_dt = datetime.strptime(clean_date, "%Y.%m.%d")
+    
+    # Make it timezone-aware (This handles the specific offset for that day)
+    return naive_dt.replace(tzinfo=tz)
+
+def parse_gmt_date(date_string):
+    """
+    Parses a string (YYYY-MM-DD or YYYY.MM.DD) into a timezone-aware 
+    datetime object for GMT.
+    """
+    tz = ZoneInfo("GMT")
+    
+    # standardize separator
+    clean_date = date_string.replace('-', '.')
+    
+    # Parse to naive datetime
+    naive_dt = datetime.strptime(clean_date, "%Y.%m.%d")
     
     # Make it timezone-aware (This handles the specific offset for that day)
     return naive_dt.replace(tzinfo=tz)

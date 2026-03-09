@@ -32,9 +32,8 @@ MINUTELY_15_VARIABLES_FORECAST = ["temperature_2m",
 
 WEATHER_CSV_SETTING = {
     'sep': ',', 
-    'decimal': '.', 
-    'thousands': ',', 
-    'date_format': '%d.%m.%Y  %H:%M', 
+    'decimal': '.',  
+    'date_format': '%Y-%m-%dT%H:%M', 
     'header': 0, 
     'encoding': 'utf-8-sig', 
     'na_values': ['-']
