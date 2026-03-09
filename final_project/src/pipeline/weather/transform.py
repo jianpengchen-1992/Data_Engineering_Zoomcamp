@@ -22,31 +22,23 @@ def create_payload(lat, lon, start_date, end_date = None, target_cat = "historic
     return payload, api_url
 
 
-def get_weather_csv_stream(api_url, params, response_handler = None, csv_kwargs=None):
-# 1. Safe initialization of dictionary
-    if csv_kwargs is None:
-        csv_kwargs = {}
-    
+def get_weather_df(api_url, params):
     # 2. Fetch data
     r = requests.get(api_url, params=params)
     r.raise_for_status()  # Professional touch: crash early if the API is down
     data = r.json()
-    
     # 3. Extract the right key (using .get() is safer)
     payload = data.get('hourly') or data.get('minutely_15')
     if payload is None:
         raise ValueError("API response missing 'hourly' or 'minutely_15' keys")
-        
     df = pd.DataFrame(payload)
-    
-    # 4. Handle dynamic updates
-    if response_handler:
-        # Use the passed function, not a hardcoded name
-        dynamic_kwargs = response_handler(df)
-        csv_kwargs.update(dynamic_kwargs)
-    
-    # 5. Return as list of strings (as requested by your .splitlines() logic)
-    return df.to_csv(index=False, **csv_kwargs).splitlines()
+    # Explicitly define the format for faster, safer parsing
+    if 'time' in df.columns:
+        df['time'] = pd.to_datetime(
+            df['time'], 
+            format='%Y-%m-%dT%H:%M' # Matches: 2026-03-08T00:30
+        )
+    return df
 
 
 def weather_response_handler(df):

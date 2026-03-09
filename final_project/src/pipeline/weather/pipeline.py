@@ -1,14 +1,15 @@
 import pandas as pd
 import sys
 import os
+import logging
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import GCP_BUCKET_NAME, GCP_CREDENTIALS
 from src.utils.data_helper import parse_gmt_date
 from src.utils.gcp_utils import upload_parquet_to_gcs, load_to_bigquery, stream_chunks_to_parquet
-from src.pipeline.weather.config import CITIES, WEATHER_CSV_SETTING
-from src.pipeline.weather.transform import create_payload, get_weather_csv_stream, weather_response_handler
+from src.pipeline.weather.config import CITIES
+from src.pipeline.weather.transform import create_payload, get_weather_df
 # 
 def pipeline(start_date, end_date=None, target_cat="historical"):
     # --- Step 1: Parse Dates ---
@@ -25,10 +26,14 @@ def pipeline(start_date, end_date=None, target_cat="historical"):
 
         blob_name = f"weather/{target_cat}/{city_name}/{start_date}_to_{end_date}.parquet"
 
-        csv = get_weather_csv_stream(API_URL, payload,weather_response_handler, WEATHER_CSV_SETTING)
+        df = get_weather_df(API_URL, payload)
 
-        for temp_path in stream_chunks_to_parquet(csv):         
-            upload_parquet_to_gcs(temp_path, GCP_BUCKET_NAME, blob_name, GCP_CREDENTIALS)
+        for temp_path in stream_chunks_to_parquet([df]):         
+            if temp_path:
+                    logging.info(f"Uploading {blob_name} to GCS...")
+                    upload_parquet_to_gcs(temp_path, GCP_BUCKET_NAME, blob_name, GCP_CREDENTIALS)
+            else:
+                logging.error("No data found to upload.")
 
         # --- load onto BigQuery ---
         gcs_uri = f"gs://{GCP_BUCKET_NAME}/{blob_name}"
