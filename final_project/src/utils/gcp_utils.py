@@ -78,6 +78,7 @@ def upload_parquet_to_gcs(local_path, bucket_name, destination_blob, credentials
     # Optional: Check if bucket exists (omitted for brevity)
     
     blob = bucket.blob(destination_blob)
+    blob.chunk_size = 5 * 1024 * 1024
     blob.upload_from_filename(local_path)
     
     logging.info("Upload Success!")

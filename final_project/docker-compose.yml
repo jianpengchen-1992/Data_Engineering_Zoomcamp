@@ -1,13 +1,13 @@
 version: '3.13'
 
 services:
-  energy-pipeline:
-    build: .
-    # Notice the updated path to the script
-    command: python src/pipeline/energy/pipeline.py --type actual
-    env_file: .env
+  # energy-pipeline:
+  #   build: .
+  #   # Notice the updated path to the script
+  #   command: python src/pipeline/energy/pipeline.py --type actual
+  #   env_file: .env
 
   weather-pipeline:
     build: .
-    command: uv run python -m src.pipeline.weather.pipeline --start_date 2026-03-08 --target_cat forecast
+    command: uv run python -m src.pipeline.weather.pipeline --start_date ${EXECUTION_DATE} --target_cat forecast
     env_file: .env

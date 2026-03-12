@@ -1,5 +1,6 @@
 # 1. Base image
 FROM python:3.13-slim
+ENV PYTHONUNBUFFERED=1
 
 # 2. Set the working directory to the root of our app
 WORKDIR /app
