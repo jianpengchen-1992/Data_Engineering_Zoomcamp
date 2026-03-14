@@ -18,29 +18,29 @@ def pipeline(start_date, end_date=None, target_cat="historical"):
         end_date = parse_gmt_date(end_date).strftime('%Y-%m-%d')
     else:
         end_date = start_date
-    for city in CITIES:
-        city_name = city["name"]
-        lat = city["lat"]
-        lon = city["lon"]
-        payload, API_URL = create_payload(lat, lon, start_date, end_date, target_cat)
+    #for city in CITIES:
+    city_names = [city["name"] for city in CITIES]
+    lats = [city["lat"] for city in CITIES]
+    lons = [city["lon"] for city in CITIES]
+    payload, API_URL = create_payload(lats, lons, start_date, end_date, target_cat)
+    df = get_weather_df(API_URL, payload)
 
-        blob_name = f"weather/{target_cat}/{city_name}/{start_date}_to_{end_date}.parquet"
+    blob_name = f"weather/{target_cat}/{city_name}/{start_date}_to_{end_date}.parquet"
+    print("-------------------test1------------------------")
+    
+    print("-------------------test2------------------------")
+    for temp_path in stream_chunks_to_parquet([df]):         
+        if temp_path:
+                logging.info(f"Uploading {blob_name} to GCS...")
+                upload_parquet_to_gcs(temp_path, GCP_BUCKET_NAME, blob_name, GCP_CREDENTIALS)
+        else:
+            logging.error("No data found to upload.")
 
-        df = get_weather_df(API_URL, payload)
-
-        for temp_path in stream_chunks_to_parquet([df]):         
-            if temp_path:
-                    logging.info(f"Uploading {blob_name} to GCS...")
-                    upload_parquet_to_gcs(temp_path, GCP_BUCKET_NAME, blob_name, GCP_CREDENTIALS)
-            else:
-                logging.error("No data found to upload.")
-
-        # --- load onto BigQuery ---
-        gcs_uri = f"gs://{GCP_BUCKET_NAME}/{blob_name}"
-        dataset = "weather_data"
-        #table = f"{target_cat}_{city_name}"
-        table = f"{target_cat}"
-        load_to_bigquery(gcs_uri, dataset, table, GCP_CREDENTIALS)
+    # --- load onto BigQuery ---
+    gcs_uri = f"gs://{GCP_BUCKET_NAME}/{blob_name}"
+    dataset = "weather_data"
+    table = f"{target_cat}"
+    load_to_bigquery(gcs_uri, dataset, table, GCP_CREDENTIALS)
 
 if __name__ == "__main__":
     import argparse

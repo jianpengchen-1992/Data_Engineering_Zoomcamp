@@ -11,3 +11,15 @@ services:
     build: .
     command: uv run python -m src.pipeline.weather.pipeline --start_date ${EXECUTION_DATE} --target_cat forecast
     env_file: .env
+    environment:
+      - GRPC_VERBOSITY=DEBUG
+      - GRPC_TRACE=tcp,http,api
+      - GOOGLE_CLOUD_ENABLE_DEBUG_LOGS=1
+    networks:
+      - codespace_net
+# 2. Define the custom network and force a smaller MTU
+networks:
+  codespace_net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1400

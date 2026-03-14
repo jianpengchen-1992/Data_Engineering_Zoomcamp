@@ -3,10 +3,10 @@ import pandas as pd
 
 from src.pipeline.weather.config import MINUTELY_15_VARIABLES_FORECAST, HOURLY_VARIABLES_HIST, URL_WEATHER_FORECAST, URL_WEATHER_HISTORICAL
 
-def create_payload(lat, lon, start_date, end_date = None, target_cat = "historical"):# target_cat can be "historical" or "forecast"
+def create_payload(lats, lons, start_date, end_date = None, target_cat = "historical"):# target_cat can be "historical" or "forecast"
     payload = {
-        "latitude": lat,
-        "longitude": lon,
+        "latitude": lats,
+        "longitude": lons,
         "start_date": start_date,
         "end_date": end_date,
     }
@@ -22,7 +22,7 @@ def create_payload(lat, lon, start_date, end_date = None, target_cat = "historic
     return payload, api_url
 
 
-def get_weather_df(api_url, params):
+def get_weather_dfs(api_url, params):
     # 2. Fetch data
     r = requests.get(api_url, params=params)
     r.raise_for_status()  # Professional touch: crash early if the API is down
