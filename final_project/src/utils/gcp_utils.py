@@ -1,12 +1,11 @@
-import io
 import os
-import requests
 import tempfile
-import pandas as pd
 import logging
 from google.cloud import storage
 from contextlib import contextmanager
 from pathlib import Path
+import pyarrow as pa
+import pyarrow.parquet as pq
 # Setup Logging
 logging.basicConfig(level=logging.INFO)
 
@@ -21,23 +20,31 @@ def stream_chunks_to_parquet(df_generator, transform_func=None):
     temp_path = temp_file.name
     temp_file.close()
     
+    writer = None  # Initialize writer variable
+    
     try:
         chunks_processed = 0
         for i, chunk in enumerate(df_generator):
             if transform_func:
                 chunk = transform_func(chunk)
             
-            append = False if i == 0 else True
+            # 1. Convert pandas chunk to PyArrow Table
+            table = pa.Table.from_pandas(chunk)
             
-            chunk.to_parquet(
-                temp_path, 
-                engine='fastparquet', 
-                index=False, 
-                append=append
-            )
+            # 2. On the very first chunk, initialize the ParquetWriter with the data's schema
+            if i == 0:
+                writer = pq.ParquetWriter(temp_path, table.schema)
+            
+            # 3. Write the chunk to the file
+            writer.write_table(table)
+            
             chunks_processed += 1
             if i % 5 == 0:
                 logging.info(f"Processed chunk {i}...")
+
+        # 4. VERY IMPORTANT: Close the writer to finalize the file BEFORE yielding
+        if writer:
+            writer.close()
 
         if chunks_processed == 0:
             logging.warning("No chunks were processed!")
@@ -46,6 +53,10 @@ def stream_chunks_to_parquet(df_generator, transform_func=None):
             yield temp_path
 
     finally:
+        # Failsafe: ensure writer is closed if an error interrupted the loop
+        if writer and writer.is_open:
+            writer.close()
+            
         if os.path.exists(temp_path):
             os.remove(temp_path)
             logging.info("Temporary file wiped.")

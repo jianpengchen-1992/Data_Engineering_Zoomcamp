@@ -52,6 +52,8 @@ def safe_convert_to_utc(date_series: pd.Series, local_tz: str = 'Europe/Berlin')
     return s.dt.tz_convert('UTC')
 
 
+
+
 def date_to_timestamp_ms(dt_obj):
     """
     Takes a timezone-aware datetime object and returns unix milliseconds.

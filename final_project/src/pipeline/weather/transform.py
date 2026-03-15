@@ -1,5 +1,7 @@
-import requests
 import pandas as pd
+import openmeteo_requests
+import requests_cache
+from retry_requests import retry
 
 from src.pipeline.weather.config import MINUTELY_15_VARIABLES_FORECAST, HOURLY_VARIABLES_HIST, URL_WEATHER_FORECAST, URL_WEATHER_HISTORICAL
 
@@ -22,23 +24,38 @@ def create_payload(lats, lons, start_date, end_date = None, target_cat = "histor
     return payload, api_url
 
 
-def get_weather_dfs(api_url, params):
+def get_weather_dfs(api_url, params, cities):
+    # Setup the Open-Meteo API client with cache and retry on error
+    cache_session = requests_cache.CachedSession('.cache', expire_after = -1)
+    retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
+    openmeteo = openmeteo_requests.Client(session = retry_session)
     # 2. Fetch data
-    r = requests.get(api_url, params=params)
-    r.raise_for_status()  # Professional touch: crash early if the API is down
-    data = r.json()
-    # 3. Extract the right key (using .get() is safer)
-    payload = data.get('hourly') or data.get('minutely_15')
-    if payload is None:
-        raise ValueError("API response missing 'hourly' or 'minutely_15' keys")
-    df = pd.DataFrame(payload)
-    # Explicitly define the format for faster, safer parsing
-    if 'time' in df.columns:
-        df['time'] = pd.to_datetime(
-            df['time'], 
-            format='%Y-%m-%dT%H:%M' # Matches: 2026-03-08T00:30
-        )
-    return df
+    dfs = []
+    responses = openmeteo.weather_api(api_url, params=params)
+    for city, r in zip(cities, responses):
+        if "hourly" in params:
+            json_data = r.Hourly()
+            resolution = "hourly"
+        else:
+            json_data = r.Minutely15()
+            resolution = "minutely_15"
+        
+        data = {"date": pd.date_range(
+            start = pd.to_datetime(json_data.Time(), unit = "s", utc = True),
+            end =  pd.to_datetime(json_data.TimeEnd(), unit = "s", utc = True),
+            freq = pd.Timedelta(seconds = json_data .Interval()),
+            inclusive = "left"
+         )}
+        cols = params[resolution]
+        for i, col in enumerate(cols):
+            data[col] = json_data.Variables(i).ValuesAsNumpy()
+        dataframe = pd.DataFrame(data = data)
+        dataframe.insert(0, 'city', [city] * len(dataframe))
+        dataframe['city'] = dataframe['city'].copy()
+        # Force the 'date' column to nanosecond precision
+        dataframe['date'] = pd.to_datetime(dataframe['date']).astype('datetime64[ms, UTC]')
+        dfs.append(dataframe)
+    return dfs
 
 
 def weather_response_handler(df):

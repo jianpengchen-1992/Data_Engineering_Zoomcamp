@@ -2,7 +2,7 @@ import json
 import os
 import io
 from pathlib import Path
-from final_project.src.pipeline.weather.config import URL_WEATHER_FORECAST, URL_WEATHER_HISTORICAL
+from src.pipeline.weather.config import URL_WEATHER_FORECAST, URL_WEATHER_HISTORICAL
 from src.config import SETTINGS_PATH, MARKET_DATA_CONFIG_PATH
 import pandas as pd
 
