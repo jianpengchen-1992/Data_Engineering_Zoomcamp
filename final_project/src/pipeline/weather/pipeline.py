@@ -38,7 +38,6 @@ def pipeline(start_date, end_date=None, target_cat="historical"):
         dataset = "weather_data"
         table = f"{target_cat}"
         load_to_bigquery(gcs_uri, dataset, table, GCP_CREDENTIALS)
-
 if __name__ == "__main__":
     import argparse
 
