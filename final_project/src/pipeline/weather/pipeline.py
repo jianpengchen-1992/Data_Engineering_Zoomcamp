@@ -44,7 +44,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest Parquet data to GCS")
     parser.add_argument("--start_date", required=True, type=str, help="Start date in DD-MM-YYYY format")
     parser.add_argument("--end_date", required=False, type=str, help="End date in DD-MM-YYYY format (default: start_date)")
-    parser.add_argument("--target_cat", required=True, type=str, help="Main category of the data to ingest")
+    parser.add_argument("--target_main_cat", required=True, type=str, help="Main category of the data to ingest")
 
     args = parser.parse_args()
-    pipeline(args.start_date, args.end_date, args.target_cat)
+    pipeline(args.start_date, args.end_date, args.target_main_cat)
