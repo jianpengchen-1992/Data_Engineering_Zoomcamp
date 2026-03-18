@@ -3,6 +3,7 @@ from airflow.providers.docker.operators.docker import DockerOperator
 def create_ingestion_task(pipeline, target_main_cat, target_sub_cat = None, pool_name=None):
 # Create a unique task ID for Airflow (e.g., "run_pipeline1_stromerzeugung")
     task_id = f"run_{pipeline}_{target_main_cat.lower()}_{target_sub_cat.lower()}" if target_sub_cat else f"run_{pipeline}_{target_main_cat.lower()}"
+    task_id = task_id.replace(' ', '_')
     
     # Note the {{ ds }} - Airflow will inject the date here at runtime
     if target_sub_cat:
