@@ -47,8 +47,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Ingest Parquet data to GCS")
-    parser.add_argument("--start_time", required=True, type=str, help="Start time in YYYY-MM-DD format")
-    parser.add_argument("--end_time", required=False, type=str, help="End time in YYYY-MM-DD format (default: start_time + 1 day)")
+    parser.add_argument("--start_date", required=True, type=str, help="Start time in YYYY-MM-DD format")
+    parser.add_argument("--end_date", required=False, type=str, help="End time in YYYY-MM-DD format (default: start_time + 1 day)")
     parser.add_argument("--target_main_cat", required=True, type=str, help="Main category of the data to ingest")
     parser.add_argument("--target_sub_cat", required=True, type=str, help="Sub category of the data to ingest")
 
