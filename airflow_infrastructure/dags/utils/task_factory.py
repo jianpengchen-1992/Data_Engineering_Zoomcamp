@@ -7,19 +7,17 @@ def create_ingestion_task(pipeline, target_main_cat, target_sub_cat = None, pool
     task_id = task_id.replace(" ", "_")  # Replace spaces with underscores for valid task IDs
 
     safe_main_cat = shlex.quote(target_main_cat) # Safely quote the main category for shell command
-    if target_sub_cat:
-        safe_sub_cat = shlex.quote(target_sub_cat) # Safely quote the sub category for shell command
+    safe_sub_cat = shlex.quote(target_sub_cat) if target_sub_cat else "" # Safely quote the sub category for shell command
     
     if pipeline == 'energy':
-        command = f"uv run python -m src.pipeline.{pipeline}.pipeline --start_date $START_DATE --target_main_cat {safe_main_cat} --target_sub_cat {safe_sub_cat}"
+        command = f"/bin/bash -c 'uv run python -m src.pipeline.{pipeline}.pipeline --start_date $START_DATE --target_main_cat {safe_main_cat} --target_sub_cat {safe_sub_cat}'"
     elif pipeline == 'weather':
-        command = f"uv run python -m src.pipeline.{pipeline}.pipeline --start_date $START_DATE --target_main_cat {safe_main_cat}"
+        command = f"/bin/bash -c 'uv run python -m src.pipeline.{pipeline}.pipeline --start_date $START_DATE --target_main_cat {safe_main_cat}'"
     else:
         raise ValueError(f"Unsupported pipeline: {pipeline}")
     environment={
         "START_DATE": "{{ ds }}",  # Airflow's execution date
     }
-    print(f"Creating task with ID: {task_id} and command: {command}")
     return DockerOperator(
         task_id=task_id,
         image="pipeline_image:latest",

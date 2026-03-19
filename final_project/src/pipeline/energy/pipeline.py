@@ -53,4 +53,5 @@ if __name__ == "__main__":
     parser.add_argument("--target_sub_cat", required=True, type=str, help="Sub category of the data to ingest")
 
     args = parser.parse_args()
-    pipeline(args.start_time, args.end_time, args.target_main_cat, args.target_sub_cat)
+    print(f"---------------------------------------------{args.start_date}_{args.target_main_cat}_{args.target_sub_cat}--------------------------------------------------------------")
+    pipeline(args.start_date, args.end_date, args.target_main_cat, args.target_sub_cat)
