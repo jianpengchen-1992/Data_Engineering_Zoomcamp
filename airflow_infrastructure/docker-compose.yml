@@ -8,6 +8,7 @@ x-airflow-common: &airflow-common
     # FIXED: Changed 'postgres://' to 'postgresql://'
     - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
     - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    - AIRFLOW__WEBSERVER__SHOW_TRIGGER_FORM_IF_NO_PARAMS=True
   volumes:
     - ./dags:/opt/airflow/dags
     - /var/run/docker.sock:/var/run/docker.sock 

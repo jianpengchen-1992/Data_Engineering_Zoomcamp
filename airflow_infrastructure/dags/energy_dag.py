@@ -16,7 +16,7 @@ with DAG('daily_energy_ingestion',
     # Just stamp out the tasks! No massive blocks of repeated Docker config.
     forecast_cons = create_ingestion_task('energy', 'Stromverbrauch', 'Prognostizierter Stromverbrauch')
     actual_cons   = create_ingestion_task('energy', 'Stromverbrauch', 'Realisierter Stromverbrauch')
-    forecast_gen  = create_ingestion_task('energy', 'Stromerzeugung', 'Prognostizierte Erzeugung')
+    forecast_gen  = create_ingestion_task('energy', 'Stromerzeugung', 'Prognostizierte Erzeugung Day-Ahead')
     actual_gen    = create_ingestion_task('energy', 'Stromerzeugung', 'Realisierte Erzeugung')
 
     # They run in parallel automatically!

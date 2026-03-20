@@ -10,9 +10,9 @@ def create_ingestion_task(pipeline, target_main_cat, target_sub_cat = None, pool
     safe_sub_cat = shlex.quote(target_sub_cat) if target_sub_cat else "" # Safely quote the sub category for shell command
     
     if pipeline == 'energy':
-        command = f"/bin/bash -c 'uv run python -m src.pipeline.{pipeline}.pipeline --start_date $START_DATE --target_main_cat {safe_main_cat} --target_sub_cat {safe_sub_cat}'"
+        command = f'/bin/bash -c "uv run python -m src.pipeline.{pipeline}.pipeline --start_date $START_DATE --target_main_cat {safe_main_cat} --target_sub_cat {safe_sub_cat}"'
     elif pipeline == 'weather':
-        command = f"/bin/bash -c 'uv run python -m src.pipeline.{pipeline}.pipeline --start_date $START_DATE --target_main_cat {safe_main_cat}'"
+        command = f'/bin/bash -c "uv run python -m src.pipeline.{pipeline}.pipeline --start_date $START_DATE --target_main_cat {safe_main_cat}"'
     else:
         raise ValueError(f"Unsupported pipeline: {pipeline}")
     environment={
