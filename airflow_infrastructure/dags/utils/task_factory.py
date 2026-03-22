@@ -22,7 +22,6 @@ def create_ingestion_task(pipeline, target_main_cat, target_sub_cat = None, pool
         task_id=task_id,
         image="pipeline_image:latest",
         command=command,
-        pool=pool_name,
         network_mode="bridge",
         auto_remove="force",
         mount_tmp_dir=False,

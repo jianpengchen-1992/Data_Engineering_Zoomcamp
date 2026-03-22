@@ -17,7 +17,6 @@ with DAG('weather_historical',
     hist_task = create_ingestion_task(
         pipeline='weather', 
         target_main_cat='historical',
-        pool_name='weather_api_limit' # Adding the pool to protect the API
     )
 
 # DAG 2: Forecast
@@ -30,5 +29,4 @@ with DAG('weather_forecast', start_date=datetime(2022, 1, 1),
     fore_task = create_ingestion_task(
         pipeline='weather', 
         target_main_cat='forecast',
-        pool_name='weather_api_limit' # Same pool, so they never run at the same time
     )
