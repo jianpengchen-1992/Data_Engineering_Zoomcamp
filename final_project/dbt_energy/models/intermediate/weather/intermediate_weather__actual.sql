@@ -46,7 +46,7 @@ spine AS (
 hourly_data AS (
     SELECT 
         city,
-        `weather_timestamp`,
+        `weather_timestamp`
         {{ generate_lead_columns(weather_metrics_actual, 'city', 'weather_timestamp') }}
 
     FROM {{ ref('stg_weather__actual') }}
@@ -63,7 +63,7 @@ interpolated_data AS (
         h.city
         
         -- Loop through your global list of metrics
-        {% for metric in var('weather_metrics_actual') %}
+        {% for metric in weather_metrics_actual %}
         
         -- Call the math macro and alias the new column
         , {{ interpolate_linear(metric, 's.timestamp_15min') }} AS {{ metric }}_15min
@@ -72,7 +72,7 @@ interpolated_data AS (
         
         FROM spine s
     LEFT JOIN hourly_data h
-        ON DATE_TRUNC(s.timestamp_15m, HOUR) = h.`weather_timestamp`
+        ON DATE_TRUNC(s.timestamp_15min, HOUR) = h.`weather_timestamp`
     WHERE h.city IS NOT NULL 
 )
 
@@ -80,7 +80,7 @@ SELECT * FROM interpolated_data
 PIVOT (
     
     -- LOOP 1: The Metrics (Aggregations)
-    {% for metric in var('weather_metrics_actual') %}
+    {% for metric in weather_metrics_actual %}
         MAX({{ metric }}_15min) AS {{ metric }}{% if not loop.last %}, {% endif %}
     {% endfor %}
     
