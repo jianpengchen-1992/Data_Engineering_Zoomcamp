@@ -43,7 +43,7 @@ spine AS (
     'diffuse_radiation'
 ] %}
 
-hourly_data AS (
+weather_data_hourly AS (
     SELECT 
         city,
         `weather_timestamp`
@@ -71,7 +71,7 @@ interpolated_data AS (
         {% endfor %}
         
         FROM spine s
-    LEFT JOIN hourly_data h
+    LEFT JOIN weather_data_hourly h
         ON DATE_TRUNC(s.timestamp_15min, HOUR) = h.`weather_timestamp`
     WHERE h.city IS NOT NULL 
 )
