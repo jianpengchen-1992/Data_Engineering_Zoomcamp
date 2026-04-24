@@ -7,10 +7,13 @@ WITH daily_aggregations AS (
         DATE(timestamp_15min) AS energy_date,
 
         -- 2. Average Wholesale Price (Germany)
-        AVG(market__wholesale_prices_de_lu) AS avg_price_de_lu,
+        SUM(market__wholesale_prices_de_lu * energy__actual_generation_total_generation) 
+            / NULLIF(SUM(energy__actual_generation_total_generation), 0) AS vw_avg_price_de_lu,
 
         -- 3. Peak Residual Load (coming straight from the consumption data!)
         MAX(energy__actual_consumption_residuallast) AS peak_residual_load,
+        MIN(market__wholesale_prices_de_lu) AS min_price_de_lu,
+        MAX(market__wholesale_prices_de_lu) AS max_price_de_lu,
 
         -- Helper aggregates for generation types
         SUM(energy__actual_generation_total_renewable_energy) AS total_renewable_gen,
@@ -31,10 +34,12 @@ SELECT
     total_daily_gen,
     
     -- Rounding to 2 decimals makes it cleaner for the dashboard
-    ROUND(avg_price_de_lu, 2) AS avg_price_de_lu,
+    ROUND(vw_avg_price_de_lu, 2) AS avg_price_de_lu,
     
     ROUND(peak_residual_load, 2) AS peak_residual_load,
-    
+    ROUND(min_price_de_lu, 2) AS min_price_de_lu,
+    ROUND(max_price_de_lu, 2) AS max_price_de_lu,
+
     -- 4. Renewable Share (%)
     -- We use NULLIF to prevent "divide by zero" errors if data is missing
     ROUND(
@@ -43,8 +48,8 @@ SELECT
 
     -- PRO TIP: Create a helper column for your BI tool's color logic!
     CASE 
-        WHEN avg_price_de_lu < 0 THEN 'Negative'
-        WHEN avg_price_de_lu > 150 THEN 'High Spike' -- Adjust this threshold to your market
+        WHEN vw_avg_price_de_lu < 0 THEN 'Negative'
+        WHEN vw_avg_price_de_lu > 150 THEN 'High Spike' -- Adjust this threshold to your market
         ELSE 'Normal'
     END AS price_status_flag
 
