@@ -18,10 +18,10 @@ SELECT
     
     -- A simple capacity-weighted index biased toward Southern Germany (feel free to tweak weights)
     (
-        (COALESCE(weather__actual_shortwave_radiation_muenchen, 0) * 0.50) + 
-        (COALESCE(weather__actual_shortwave_radiation_freiburg_im_breisgau, 0) * 0.30) + 
-        (COALESCE(weather__actual_shortwave_radiation_berlin, 0) * 0.10) +
-        (COALESCE(weather__actual_shortwave_radiation_hamburg, 0) * 0.10) 
+        (COALESCE(weather__actual_solar_radiation_muenchen, 0) * 0.50) + 
+        (COALESCE(weather__actual_solar_radiation_freiburg_im_breisgau, 0) * 0.30) + 
+        (COALESCE(weather__actual_solar_radiation_berlin, 0) * 0.10) +
+        (COALESCE(weather__actual_solar_radiation_hamburg, 0) * 0.10) 
     ) AS solar_radiation_index
 
 FROM ML.PREDICT(
@@ -35,10 +35,10 @@ FROM ML.PREDICT(
             
             -- Solar Passthrough
             COALESCE(energy__actual_generation_photovoltaik, 0) AS gen_solar_actual,
-            weather__actual_shortwave_radiation_muenchen,
-            weather__actual_shortwave_radiation_freiburg_im_breisgau,
-            weather__actual_shortwave_radiation_berlin,
-            weather__actual_shortwave_radiation_hamburg,
+            weather__actual_solar_radiation_muenchen,
+            weather__actual_solar_radiation_freiburg_im_breisgau,
+            weather__actual_solar_radiation_berlin,
+            weather__actual_solar_radiation_hamburg,
 
             -- The Kitchen Sink (All your Wind Features from the macro go here)
             weather__actual_wind_speed_100m_rostock,
@@ -62,4 +62,5 @@ FROM ML.PREDICT(
 
         FROM {{ ref('intermediate_energy_weather_joined') }}
     )
+    
 )

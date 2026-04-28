@@ -4,7 +4,8 @@
     CREATE OR REPLACE MODEL `{{ target.database }}.{{ target.schema }}.wind_capacity_model`
     OPTIONS(
         model_type='boosted_tree_regressor', 
-        input_label_cols=['actual_wind_generation']
+        input_label_cols=['actual_wind_generation'],
+        enable_global_explain=TRUE
     ) AS
     
     SELECT 
